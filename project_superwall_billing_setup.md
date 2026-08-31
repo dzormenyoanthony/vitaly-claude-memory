@@ -5,7 +5,31 @@ metadata:
   node_type: memory
   type: project
   originSessionId: d9366805-0d36-441c-9593-cc8eb49dfc41
-  modified: 2026-08-30T20:51:51.860Z
+  modified: 2026-08-31T05:11:35.937Z
+---
+
+**Feature Gating gotcha (2026-08-31)** — symptom reported: paywall shows,
+user swipes back without buying, and still gets the premium feature.
+This is NOT a code bug. `SuperwallPaywallService.gateFeature` calls
+`Superwall.shared.registerPlacement(placement, feature: () { onAccessGranted(); })`,
+and whether that `feature` closure runs on paywall **dismissal** is
+controlled entirely by the paywall's **Feature Gating** setting in the
+Superwall dashboard:
+
+| Feature Gating | On dismiss without purchase |
+| --- | --- |
+| **Non Gated** (Superwall's default) | `feature` still runs → feature granted free |
+| **Gated** | `feature` runs only with an active entitlement → dismiss leaves it locked |
+
+Fix: in the Superwall dashboard set each paywall attached to
+`scan_report` / `upload_pdf_report` / `export_report_data` to **Gated**
+(paywall settings / campaign paywall config). No app rebuild — effective
+on next paywall fetch. Also verify each placement is actually attached to
+a paywall in a live campaign; an unattached placement likewise falls
+through to `feature()` and runs free. "Show close button" / swipe-to-
+dismiss is a separate paywall-design option — Gated is what enforces the
+lock, set that first.
+
 ---
 
 Superwall paywall integration shipped 2026-08-30 (commit `7759bcf`, pushed to `origin/master`). Gates three premium actions via `core/paywall/` (`PaywallService` interface + `SuperwallPaywallService` + `NoOpPaywallService` default, same pattern as `AnalyticsService`):
