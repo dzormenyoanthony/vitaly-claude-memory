@@ -45,6 +45,8 @@ This repo is the backing store for
   git history, `CLAUDE.md`).
 - Relative dates are converted to absolute before saving.
 - Line endings are pinned to LF via `.gitattributes`.
+- Editor and OS cruft (`.DS_Store`, `Thumbs.db`, `.vscode/`, `.idea/`,
+  Vim/Emacs temp files, …) is kept out via `.gitignore`.
 
 ## Not in this repo
 
