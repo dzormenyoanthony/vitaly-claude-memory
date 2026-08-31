@@ -1,29 +1,61 @@
 ---
 name: project-google-sign-in
-description: Real Google Sign-In wired up and verified live 2026-08-27; all 3 signing fingerprints (debug, upload, Play App Signing) verified against google-services.json 2026-08-31
+description: Real Google Sign-In wired up 2026-08-27; broke for Play-Store users until the Play App Signing DEPLOYMENT cert SHA-1 was registered 2026-08-31 (commit 77d6e63)
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-08-31T04:20:13.080Z
+  modified: 2026-08-31T05:35:39.749Z
   originSessionId: 1bb5e4d1-301a-4e29-b105-92b8a30f093d
 ---
 
-**2026-08-31 re-verification** — all three Android OAuth clients in
-`android/app/google-services.json` now confirmed:
+**2026-08-31 — real bug: Google Sign-In failed for everyone who
+installed from the Play Store.** Debug builds and upload-key-signed
+sideloads worked; anyone on a Play-distributed build got a developer
+error. Root cause: Play App Signing does **not** use one certificate. Its
+"App signing key" download (Play Console → Setup → App signing → download
+certificates → `certificates.zip`) contains **three** Google-issued
+`.der` certs, and only one of them signs the APKs delivered to devices:
 
-| `certificate_hash` | Key | How verified |
+| cert file in the zip | SHA-1 | role |
 | --- | --- | --- |
-| `eaadf0528de63db1d51a2878191f158b054275e5` | `android/app/upload-keystore.jks` (alias `upload`) | `keytool -list -v` locally |
-| `a250a61a659b1af9f22ac10b2b52b17c03078a93` | `~/.android/debug.keystore` (alias `androiddebugkey`) | `keytool -list -v` locally |
-| `111c2de2fd3a660a11fa717ddf1d29a5be3f12de` | Play App Signing key | user read SHA-1 off Play Console → Setup → App signing |
+| `deployment_cert.der` | `d26cd40e323c676bd2faa12b5d08f5cb964496d6` | **the one that signs delivered APKs — the one that matters** |
+| `hybrid_classical_cert.der` | `111c2de2fd3a660a11fa717ddf1d29a5be3f12de` | classical half of the hybrid/PQC signing scheme |
+| `hybrid_pqc_cert.der` | `4eb29214e4063ca455a3214ecdbd963d7d79a795` | post-quantum half |
 
-Web client (type 3) `749553349568-27m2of1t…` present for
-`default_web_client_id`. `minSdk` is now `maxOf(flutter.minSdkVersion, 26)`
-(raised past 24 by `superwallkit_flutter`). The release/app-signing SHA-1s
-were added in commit `5929e12`. Debug + upload paths were already proven;
-Play-distributed builds are now also fully backed — the earlier
-"unverified third fingerprint" caveat is cleared. keytool passwords come
-from `android/key.properties` (gitignored, local).
+Earlier in the same session the `111c2de2…` (hybrid_classical) hash had
+been registered in Firebase, on the mistaken belief it *was* the Play
+App Signing cert — it is not. `deployment_cert.der`'s SHA-1 was never
+registered, so Google rejected every sign-in from a Play build.
+
+**Fix:** added `deployment_cert.der`'s SHA-1 **and** SHA-256
+(`8F:EE:46:F8:06:E3:9C:60:3D:7D:2D:B8:BC:4B:32:2F:DD:24:FE:13:63:EB:D9:F2:78:C5:C3:2D:3A:0B:65:E5`),
+plus the PQC cert, in **Firebase Console → Project Settings → Android app
+→ Add fingerprint**, re-downloaded `google-services.json`, committed as
+`77d6e63`. The updated JSON now carries OAuth clients for all five
+signing identities: deployment `d26cd40e…`, PQC `4eb29214…`,
+hybrid-classical `111c2de2…`, upload `eaadf0528…`, debug `a250a61a…`,
+plus the type-3 web client `749553349568-27m2of1t…`.
+
+**No new app build was needed** — the extra `client_type:1` entries in
+`google-services.json` are pure server-side registrations; the
+`google-services` Gradle plugin does not compile Android OAuth client
+hashes into app resources (only the web client → `default_web_client_id`,
+sender id, api key, app id — none of which changed). The committed JSON
+produces a byte-identical AAB. The fix takes effect once Firebase
+propagates the fingerprint; the build already on Play works as-is.
+
+`minSdk` is `maxOf(flutter.minSdkVersion, 26)` (raised past
+`google_sign_in_android`'s 24 floor by `superwallkit_flutter`). keytool
+passwords for the local keystores come from `android/key.properties`
+(gitignored).
+
+**How to apply — Play App Signing SHA-1 registration:** never assume Play
+App Signing is a single cert. Download `certificates.zip` from Play
+Console → Setup → App signing and register the SHA-1 **and SHA-256** of
+`deployment_cert.der` (the delivered-APK signer) in Firebase; register
+the hybrid/PQC certs too. `keytool -printcert -file deployment_cert.der`
+prints both hashes. Reading a single SHA-1 off the App-signing page can
+easily be the wrong one of the three.
 
 ---
 
@@ -83,4 +115,6 @@ directly ("EVERYTHING WORKS").
 machine, a release build, a different Firebase environment), check
 `google-services.json`'s `oauth_client` array first — an empty array is
 the single most likely cause of a silent failure, and is diagnosable
-without needing to run the app at all.
+without needing to run the app at all. If it fails **only for Play-Store
+installs** while debug/sideload works, it's the Play App Signing
+deployment cert — see the 2026-08-31 section above.
