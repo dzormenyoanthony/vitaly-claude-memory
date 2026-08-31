@@ -4,7 +4,7 @@ description: Android release-signing, INTERNET permission, and launcher-label fi
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-08-31T05:35:54.236Z
+  modified: 2026-08-31T06:00:48.539Z
 ---
 
 On 2026-08-30, at the user's request, did a Play Console release-
@@ -70,6 +70,31 @@ user's explicit request for a plan-first workflow.
   L=Unknown, ST=Unknown, C=US`), not the debug key
 - Merged release manifest inspected directly for `INTERNET` + label +
   versionCode/versionName/minSdk/targetSdk
+
+## Latest release build (2026-08-31, after the Google Sign-In + account-deletion work)
+
+- Build command (always pass the dart-define, see
+  [[project-superwall-billing-setup]]):
+  `flutter build appbundle --release --dart-define-from-file=config/superwall.json`
+- Output: `build/app/outputs/bundle/release/app-release.aab`, ~92.9MB
+  (grew from 86MB after `superwallkit_flutter` + the PQC OAuth clients).
+- **versionCode 6 / versionName 1.0.1** (pubspec `1.0.1+6`, commit
+  `d265735`). Confirm via the packaged manifest:
+  `build/app/intermediates/packaged_manifests/release/processReleaseManifestForPackage/AndroidManifest.xml`
+  (`grep -oE 'versionCode="[0-9]+"'`). `aapt2 dump badging` does not work
+  cleanly on an `.aab` here — read that manifest instead.
+- `jarsigner -verify` → "jar verified". A PKIX "certificate chain is
+  invalid / unable to find valid certification path" warning is expected
+  and harmless — the upload cert is self-signed and not in a trust store.
+- Full `flutter test` suite green (308 tests) before this build.
+- HEAD at build time: `ab6cbb7` (`89c7670` account-deletion fix,
+  `77d6e63` google-services deployment-cert, `d265735` version bump,
+  `ab6cbb7` assets.dart regen — all pushed to `origin/master`).
+- A full `bundleRelease` here takes ~2.5–4 min; `flutter build` exceeds a
+  120s foreground window, run it backgrounded. Gradle rewrites the AAB
+  each run even when inputs barely change — a changed mtime alone is not
+  proof the contents differ (a `google-services.json` OAuth-client-only
+  edit produces a byte-identical AAB; see [[project-google-sign-in]]).
 
 Changes were left uncommitted at the user's option (three files:
 `android/app/build.gradle.kts`, `android/app/src/main/AndroidManifest.xml`,
