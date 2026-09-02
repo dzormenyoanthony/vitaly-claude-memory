@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 247eb89e-4bcc-4af7-b068-92b57033f42c
-  modified: 2026-09-02T03:21:28.685Z
+  modified: 2026-09-02T03:32:31.767Z
 ---
 
 Discovered 2026-09-02 while trying to run `integration_test/
@@ -38,9 +38,10 @@ file-reader; etc. That is not just tidiness — real I/O actively breaks
 `reportDocumentStorageProvider` (or equivalent) with a pass-through /
 in-memory fake — no `File`, no `path_provider`. Real
 `ReportDocumentStorage.saveLocalPages` / real `path_provider` can only be
-exercised in `integration_test/` (real event loop). On this machine that
-path is itself blocked — see [[project-integration-test-ondevice-stall]]
-(the on-device run freezes in the Drift writes right after Confirm).
+exercised in `integration_test/` (real event loop) —
+`integration_test/scan_report_pipeline_test.dart` does exactly that and
+**passes on-device** (see [[project-integration-test-ondevice-stall]] for
+the emulator-contention gotcha and how to run it).
 
 **Net coverage for the scan pipeline:** `test/features/reports/
 presentation/scan_report_pipeline_test.dart` (Vitaly commit c4d1d14)

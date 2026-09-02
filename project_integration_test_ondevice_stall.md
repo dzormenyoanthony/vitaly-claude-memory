@@ -1,10 +1,10 @@
 ---
 name: project-integration-test-ondevice-stall
-description: on-device integration tests freeze on this machine (no crash) mid-run — offline_sync_test.dart twice (past recordReading), scan_report_pipeline_test.dart twice (2nd retry froze in ConfirmReportController's real Drift writes, after the review screen rendered fine); leading cause = Drift native writes on this resource-constrained emulator
+description: on-device integration-test freezes on this machine are CONTENTION, not a deadlock — scan_report_pipeline_test.dart passed 3x straight (2026-09-02) after uninstalling the stale test APK + warming the emulator + `adb am kill-all`; run it that way. offline_sync_test.dart still unverified (not retried under those conditions).
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-09-02T03:21:42.530Z
+  modified: 2026-09-02T03:32:17.908Z
 ---
 
 `integration_test/offline_sync_test.dart` (added in `e51be08`, see
@@ -92,23 +92,34 @@ coverage — real `dart:io` file I/O can't be pumped under `flutter test`
 (details in [[project-flutter-test-real-io]]). Settled on a headless
 widget test with storage stubbed (`test/features/reports/presentation/
 scan_report_pipeline_test.dart`, Vitaly c4d1d14) that covers OCR-text ->
-extract -> review -> confirm -> real Drift writes -> navigate; the real
-page-file copy stays only in the blocked integration test.
+extract -> review -> confirm -> real Drift writes -> navigate. (The real
+page-file copy is covered by the integration test — which, see below,
+went on to pass on-device the same day.)
 
-**Decision made:** given repeated identical stalls and diminishing
-returns from continued retries, the user chose (via AskUserQuestion) to
-commit and push on the strength of static verification alone, rather
-than keep burning session time or hold the work back. This is a
-deliberate, informed choice — not an oversight.
+**RESOLVED for scan_report_pipeline_test.dart (2026-09-02):** it now
+**passes on-device, 3 runs in a row** (~6-12s test time each), fully
+end-to-end — real `BpValueExtractor`, real `ReviewExtractedScreen`, real
+`ConfirmReportController`, **real Drift writes**, **real
+`ReportDocumentStorage.saveLocalPages`** (real path_provider + file copy
+on-device), DB-row assertions, and the real `HistoryScreen` rendering the
+imported reading. So the earlier freezes were **resource contention, not
+a deadlock** — consistent with the "Slow dispatch 16815ms /
+SQLiteConnectionPool" logcat noise seen during a freeze.
 
-**How to apply:** Before trusting that §37's integration test actually
-passes end-to-end, run it fresh (ideally on a less resource-constrained
-machine, or with `flutter drive`/explicit VM-service debugging attached
-to see exactly what the isolate is awaiting when it stalls). If it stalls
-again at the same point, treat "Drift native isolate spawn on a
-memory-constrained Android emulator" as a real lead worth testing
-directly (e.g., try `NativeDatabase.memory()` without the background
-isolate, or profile isolate spawn time in isolation). Do not assume a
-past `flutter analyze`/unit-test-green report means the on-device
-integration test itself works — those are necessary, not sufficient,
-verification for this specific file.
+What made it pass, after ~4 prior freezes:
+1. `adb -s emulator-5554 shell pm uninstall com.vitality.app.vitality`
+   first — a stale test-harness APK left installed seems to be part of it
+   (cf. [[project-integration-test-apk-anr-pitfall]]).
+2. `adb shell am kill-all` to shed background app load.
+3. Emulator already **warm** — earlier freezes were all while the AVD was
+   cold-booting *and* Gradle was doing a full `assembleDebug` at the same
+   time (RAM + IO + CPU all contended).
+
+**How to apply:** to run an on-device integration test on this machine,
+first `pm uninstall` the app + `am kill-all` + make sure the emulator is
+booted and idle (not mid-cold-boot during the Gradle build). Then
+`flutter test integration_test/<file> -d emulator-5554`. If it still
+hangs with no output, it's contention — free RAM / close other apps /
+give the AVD more RAM, don't assume a code deadlock.
+`offline_sync_test.dart` has **not** been retried under these conditions
+and is still unverified on-device.
