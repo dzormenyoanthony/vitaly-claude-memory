@@ -1,10 +1,10 @@
 ---
 name: project-integration-test-ondevice-stall
-description: integration_test/offline_sync_test.dart freezes identically twice on-device on this machine, past the recordReading step, no crash/error — root cause unconfirmed
+description: on-device integration tests stall on this machine with no output/crash — offline_sync_test.dart twice (past recordReading), and scan_report_pipeline_test.dart once (before any test output at all) — root cause unconfirmed
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-08-30T04:13:56.994Z
+  modified: 2026-09-02T01:40:31.898Z
 ---
 
 `integration_test/offline_sync_test.dart` (added in `e51be08`, see
@@ -45,6 +45,23 @@ analysis can tell — `SyncCoordinator.syncAll` (`lib/core/sync/
 sync_coordinator.dart`) only does Drift queries and `FakeFirebaseFirestore`
 calls, no real network, nothing that should block indefinitely by
 inspection.
+
+**Third occurrence (2026-09-02), a different file:**
+`integration_test/scan_report_pipeline_test.dart` (added this session to
+verify the Scan BP Report pipeline on-device — canned OCR text ->
+`ReviewExtractedScreen` -> confirm -> real Drift save -> History; only the
+ML Kit recognizer stubbed). Same machine, same Pixel_8 emulator. `flutter
+test integration_test/scan_report_pipeline_test.dart -d emulator-5554`
+built, installed, and launched the app (logcat: MainActivity Displayed,
+Dart VM service listening at 01:22:37) — then produced **zero** host
+stdout and **zero** further `flutter :` logcat lines for 17+ min before
+being killed. Notably this stalled *before any test output at all* (not
+even "00:00 +0: loading"), earlier than offline_sync_test's stall point,
+which shifts suspicion toward the flutter_test<->device driver handshake
+on this machine rather than (or in addition to) the Drift native isolate.
+Statically clean: `flutter analyze` on the new file = "No issues found",
+and its review-screen logic mirrors the passing widget test
+`test/features/reports/presentation/review_extracted_screen_test.dart`.
 
 **Decision made:** given repeated identical stalls and diminishing
 returns from continued retries, the user chose (via AskUserQuestion) to

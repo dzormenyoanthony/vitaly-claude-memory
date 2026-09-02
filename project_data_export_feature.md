@@ -4,7 +4,7 @@ description: "Full BP data export (CSV + scanned reports) as a ZIP, shared via n
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-08-28T03:19:49.837Z
+  modified: 2026-09-02T02:15:36.890Z
   originSessionId: 41ef1397-50e4-4ce4-9ff0-2d6578bd9f49
 ---
 
@@ -56,3 +56,8 @@ sheet with a file literally named `vitaly_data_export_2026-08-28.zip`.
 the future, this ZIP-based approach and file layout is the currently
 approved one — check with the user before changing the structure, column
 set, or filename pattern, since these were explicitly specified.
+
+**Update (2026-09-02):** the sibling "Trends PDF summary" export now
+embeds colored charts — see [[project-trend-pdf-charts]]. That work was
+scoped to the PDF only; the ZIP in this memory was deliberately left
+unchanged, so it still contains just the CSV + `scanned_reports/`.
