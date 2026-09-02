@@ -1,4 +1,4 @@
-- [Project status](project_status.md) — phase completion snapshot, repo/git state, working pattern, what's next
+- [Project status](project_status.md) — feature-complete per PROJECT_SPEC as of 2026-09-02, all pushed to master, suite green at 312; shipped list, open items, working pattern
 - [Deferred dashboard slots](project_deferred_dashboard_slots.md) — reminders + education dashboard slots both done; BP classification (formerly the last deferred item) shipped 2026-08-26
 - [Design references](project_design_references.md) — design_references/ mockups fully implemented 2026-08-23 (visual system + features), not just future reference
 - [Scope and pace feedback](feedback_scope_and_pace.md) — user reversed "visual only" to "everything"; wants systematic auto-mode execution once scope is locked
