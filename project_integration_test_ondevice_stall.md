@@ -1,10 +1,10 @@
 ---
 name: project-integration-test-ondevice-stall
-description: on-device integration tests stall on this machine with no output/crash — offline_sync_test.dart twice (past recordReading), and scan_report_pipeline_test.dart once (before any test output at all) — root cause unconfirmed
+description: on-device integration tests freeze on this machine (no crash) mid-run — offline_sync_test.dart twice (past recordReading), scan_report_pipeline_test.dart twice (2nd retry froze in ConfirmReportController's real Drift writes, after the review screen rendered fine); leading cause = Drift native writes on this resource-constrained emulator
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-09-02T01:40:31.898Z
+  modified: 2026-09-02T02:49:12.071Z
 ---
 
 `integration_test/offline_sync_test.dart` (added in `e51be08`, see
@@ -62,6 +62,29 @@ on this machine rather than (or in addition to) the Drift native isolate.
 Statically clean: `flutter analyze` on the new file = "No issues found",
 and its review-screen logic mirrors the passing widget test
 `test/features/reports/presentation/review_extracted_screen_test.dart`.
+
+**Retry, same file (2026-09-02, later):** re-run with `--reporter
+expanded`, output to a file (not a `tail` pipe). This time it got
+further — build + install fine, then printed `00:00 +0: canned OCR text
+flows through review -> confirm -> real Drift save -> History` (the test
+body actually started executing on-device), then froze there for ~12 min
+with no further output. Crucially, `android layout` (the a11y tree —
+`adb screencap` is black for this app) showed the on-device UI had
+reached the **rendered ReviewExtractedScreen with the parsed reading
+card**: "136/84 mmHg / Needs review / Pulse 72 bpm · Aug 22, 2026",
+checkbox checked. So on a real device the stubbed-OCR-text ->
+`BpValueExtractor.extract` -> review-screen-render half of the pipeline
+demonstrably works; the freeze is *after* the "Confirm and save" tap,
+during `ConfirmReportController.confirmAndSave`'s real Drift writes
+(`DriftSavedReportRepository.add` + `DriftBloodPressureRepository
+.addReading` on a fresh `NativeDatabase.memory()`) + real
+`ReportDocumentStorage.saveLocalPages` path_provider file copy — screen
+never advanced to the "SAVED REPORTS STUB" route. logcat during the
+freeze showed heavy unrelated SQLite/GMS contention on the emulator
+("Slow dispatch took 16815ms ... SQLiteConnectionPool"). This sharpens
+the earlier lead: the stall is in **Drift native writes on this
+resource-constrained emulator**, not the flutter_test<->device handshake
+(which clearly worked — the reporter advanced and the widget tree ran).
 
 **Decision made:** given repeated identical stalls and diminishing
 returns from continued retries, the user chose (via AskUserQuestion) to
