@@ -4,7 +4,7 @@ description: on-device integration tests freeze on this machine (no crash) mid-r
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-09-02T02:49:12.071Z
+  modified: 2026-09-02T03:21:42.530Z
 ---
 
 `integration_test/offline_sync_test.dart` (added in `e51be08`, see
@@ -85,6 +85,15 @@ freeze showed heavy unrelated SQLite/GMS contention on the emulator
 the earlier lead: the stall is in **Drift native writes on this
 resource-constrained emulator**, not the flutter_test<->device handshake
 (which clearly worked — the reporter advanced and the widget tree ran).
+
+**Tried running scan_report_pipeline_test.dart as a `flutter test`
+widget test instead (2026-09-02):** doesn't rescue the real-storage
+coverage — real `dart:io` file I/O can't be pumped under `flutter test`
+(details in [[project-flutter-test-real-io]]). Settled on a headless
+widget test with storage stubbed (`test/features/reports/presentation/
+scan_report_pipeline_test.dart`, Vitaly c4d1d14) that covers OCR-text ->
+extract -> review -> confirm -> real Drift writes -> navigate; the real
+page-file copy stays only in the blocked integration test.
 
 **Decision made:** given repeated identical stalls and diminishing
 returns from continued retries, the user chose (via AskUserQuestion) to
