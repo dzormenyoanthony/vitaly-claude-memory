@@ -1,10 +1,10 @@
 ---
 name: project-integration-test-ondevice-stall
-description: on-device integration-test freezes on this machine are CONTENTION, not a deadlock — scan_report_pipeline_test.dart passed 3x straight (2026-09-02) after uninstalling the stale test APK + warming the emulator + `adb am kill-all`; run it that way. offline_sync_test.dart still unverified (not retried under those conditions).
+description: on-device integration-test freezes on this machine are emulator SQLite CONTENTION, not a Dart deadlock — short tests slip through (scan_report_pipeline_test.dart passed 3x, 2026-09-02, after pm-uninstall + am kill-all + warm emulator), long ones still stall (offline_sync_test.dart froze a 4th time even after a fresh reboot, always right after recordReading in the sync step).
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-09-02T03:32:17.908Z
+  modified: 2026-09-02T04:23:43.329Z
 ---
 
 `integration_test/offline_sync_test.dart` (added in `e51be08`, see
@@ -115,11 +115,31 @@ What made it pass, after ~4 prior freezes:
    cold-booting *and* Gradle was doing a full `assembleDebug` at the same
    time (RAM + IO + CPU all contended).
 
-**How to apply:** to run an on-device integration test on this machine,
-first `pm uninstall` the app + `am kill-all` + make sure the emulator is
-booted and idle (not mid-cold-boot during the Gradle build). Then
-`flutter test integration_test/<file> -d emulator-5554`. If it still
-hangs with no output, it's contention — free RAM / close other apps /
-give the AVD more RAM, don't assume a code deadlock.
-`offline_sync_test.dart` has **not** been retried under these conditions
-and is still unverified on-device.
+**offline_sync_test.dart retried the same way (2026-09-02) — STILL
+STALLS (4th time).** Ran it twice: once on the warm emulator (which had
+by then accumulated GMS ANRs + a bluetooth SIGABRT), then again after a
+full `adb reboot` + settle. Both froze at the **same point every prior
+time**: `recordReading('128','82')` genuinely succeeds (Dashboard shows
+"LATEST READING 128/82 mmHg" via `android layout`), then the first test
+hangs in the sync step (`syncAll` / `_remoteReadings`, Drift <->
+FakeFirebaseFirestore). After ~1 min the framework's timeout fired
+(`00:59 +0: loading ...` reappears, "Test finished."-finder spam), then
+wedged again. logcat both times showed extreme emulator SQLite
+contention — `Slow delivery took 206446ms / 288312ms ...
+SQLiteConnectionPool$IdleConnectionHandler` in `com.google.android.gms`.
+
+**Why scan_report passes but offline_sync doesn't, same machine/day:**
+scan_report is one ~12s test — short enough to slip through before the
+emulator's SQLite subsystem starves Drift's native query thread.
+offline_sync's first test runs much longer (full `VitalyApp` boot +
+splash + driving the Add-reading form + a Drift/Firestore sync
+reconcile), so it's still running when the contention bites. Not a code
+deadlock — a duration-vs-emulator-contention race.
+
+**How to apply:** to run an on-device integration test on this machine:
+`pm uninstall` the app, `am kill-all`, ensure the emulator is booted and
+*idle* (not mid-cold-boot during Gradle). Short tests (scan_report) pass.
+Long ones (offline_sync) still don't — for those, use a beefier machine /
+give the AVD more RAM/CPU, or split the test so no single `testWidgets`
+runs long enough to get caught. A no-output hang here is emulator SQLite
+contention, not a Dart deadlock — don't chase it in the app code.
