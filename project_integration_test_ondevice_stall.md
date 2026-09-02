@@ -1,10 +1,10 @@
 ---
 name: project-integration-test-ondevice-stall
-description: on-device integration-test freezes on this machine are emulator SQLite CONTENTION, not a Dart deadlock — short tests slip through (scan_report_pipeline_test.dart passed 3x, 2026-09-02, after pm-uninstall + am kill-all + warm emulator), long ones still stall (offline_sync_test.dart froze a 4th time even after a fresh reboot, always right after recordReading in the sync step).
+description: on-device integration-test freezes on this machine are native-SQLite CONTENTION (host + emulator load), not a Dart deadlock — short single-purpose tests can pass when host is idle & emulator warm (scan_report_pipeline_test.dart passed 3x, 2026-09-02), but boot()-heavy ones stall regardless: offline_sync_test.dart still hung even after being split into 6 tiny tests (froze on the boot-only test 1 under heavy host load).
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-09-02T04:23:43.329Z
+  modified: 2026-09-02T04:48:46.988Z
 ---
 
 `integration_test/offline_sync_test.dart` (added in `e51be08`, see
@@ -136,10 +136,26 @@ splash + driving the Add-reading form + a Drift/Firestore sync
 reconcile), so it's still running when the contention bites. Not a code
 deadlock — a duration-vs-emulator-contention race.
 
-**How to apply:** to run an on-device integration test on this machine:
-`pm uninstall` the app, `am kill-all`, ensure the emulator is booted and
-*idle* (not mid-cold-boot during Gradle). Short tests (scan_report) pass.
-Long ones (offline_sync) still don't — for those, use a beefier machine /
-give the AVD more RAM/CPU, or split the test so no single `testWidgets`
-runs long enough to get caught. A no-output hang here is emulator SQLite
-contention, not a Dart deadlock — don't chase it in the app code.
+**Splitting didn't rescue offline_sync (2026-09-02).** Restructured it
+into six small single-purpose `testWidgets` (one boot + a step or two
+each; only one drives the real form; sync tests add via the repository)
+— Vitaly commit 37cfdaf. Re-ran on-device: **still hung, this time on
+test 1** ("the signed-in app boots to the Dashboard"), which does only
+`boot()` + one `expect`. `android layout` showed the Dashboard fully
+rendered on-device ("Good morning, Sam", "Add reading" FAB present) — so
+`boot()` finished — yet `flutter test` never advanced past `+0` for
+~13 min. That run's Gradle build alone took 228s (vs ~85s earlier), i.e.
+the **host** was heavily loaded (many parallel background tasks + the
+emulator). So it is not purely test duration and not fixable by test
+structure: any `boot()` that stands up the full `VitalyApp` + a Drift
+`.watch()` stream, plus its teardown `db.close()`, can hang on the
+native-SQLite path when host+emulator are contended. `scan_report`
+passing earlier was a lighter-load window.
+
+**How to apply:** on-device integration tests on this machine are only
+reliable when BOTH the host is lightly loaded AND the emulator is warm &
+idle (`pm uninstall` the app, `am kill-all`, no cold-boot during Gradle).
+Even then, only short single-purpose tests are dependable; `boot()`-heavy
+or long ones are a coin flip. The real fix is a less loaded machine or an
+AVD with more RAM/CPU — a no-output hang here is native-SQLite
+contention, never a Dart deadlock, so don't chase it in app code.
