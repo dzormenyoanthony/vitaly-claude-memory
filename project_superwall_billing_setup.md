@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: d9366805-0d36-441c-9593-cc8eb49dfc41
-  modified: 2026-08-31T05:11:35.937Z
+  modified: 2026-09-04T02:00:17.826Z
 ---
 
 **Feature Gating gotcha (2026-08-31)** — symptom reported: paywall shows,
@@ -37,6 +37,28 @@ Superwall paywall integration shipped 2026-08-30 (commit `7759bcf`, pushed to `o
 - `scan_report` — Scan BP Report (camera)
 - `upload_pdf_report` — Upload/import PDF report
 - `export_report_data` — Export Report/Data
+
+**4th placement added later (post-onboarding promo, not a gate):**
+`onboarding_complete` — fired from `main.dart`. Its `onAccessGranted` is a
+no-op (the router already routes to the dashboard regardless). Must be
+**Not Gated** in the dashboard (opposite of the three above), with a
+non-subscriber audience rule on the campaign — Superwall itself is what
+limits it to non-subscribers, not app code.
+
+*Behavior changed 2026-09-04 (commit `553f480`).* Originally fired **at
+most once** — on the `AuthGateNeedsOnboarding → AuthGateReady` transition
+only, via a session-latch class `OnboardingCompletionDetector`. Symptom
+that prompted the change: a fresh test user saw it once right after
+onboarding, dismissed without buying, and never saw it again on later
+opens — that was **the designed behavior at the time**, not a bug, but
+the user wanted a recurring nudge instead. Now registers on every
+`AuthGateReady` (every cold start with an existing session) **and** every
+foreground resume while signed in — `OnboardingCompletionDetector` is
+gone (deleted, was unused after the change). No dashboard change was
+needed since the placement string didn't change, but **frequency
+capping** on that campaign (e.g. "at most once per day") is worth setting
+in the dashboard now that the app can register it many times per
+session — that's config-only, no code change.
 
 API key loads via `--dart-define-from-file=config/superwall.json` (gitignored; `config/superwall.json.example` is the checked-in template). Always pass that flag when building — omitting it silently falls back to the no-op service (paywall never shows, all premium actions run free), not an error.
 

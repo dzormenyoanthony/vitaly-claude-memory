@@ -5,15 +5,18 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 247eb89e-4bcc-4af7-b068-92b57033f42c
-  modified: 2026-09-02T04:53:28.893Z
+  modified: 2026-09-04T02:00:41.639Z
 ---
 
-**As of 2026-09-02.** Vitaly is feature-complete against `PROJECT_SPEC.md`
+**As of 2026-09-04.** Vitaly is feature-complete against `PROJECT_SPEC.md`
 and everything is committed and pushed to `master`
 (`github.com/dzormenyoanthony/Vitality`, private; Firebase
 `vitality-23966`). `flutter analyze` clean; `flutter test` green at
-**312** (host unit/widget suite). Working tree clean, `master` level with
-`origin/master`. `pubspec.yaml` version `1.0.1+7`.
+**348+** (host unit/widget suite). Working tree has two pre-existing
+uncommitted files (`export_data.md`, `pubspec.yaml`, modified before the
+2026-09-04 session, not touched by it — still sitting uncommitted, not
+yet understood). `master` level with `origin/master`. `pubspec.yaml`
+(committed) version `1.0.2+12`.
 
 **Shipped (see the dedicated memories for detail):**
 - MVP core §4 + BP Report scanning + BP status/range classification
@@ -37,6 +40,15 @@ and everything is committed and pushed to `master`
   ([[project_launcher_and_native_splash]]).
 - Spec-gap audit done 2026-08-29 — §36/§26/§37 fixed; a few minor items
   by-design ([[project-spec-gap-audit]]).
+- Trends PDF export premium-gated (was bypassing the paywall), streak
+  reworked to calendar-days (current/best/at-risk), streak-at-risk +
+  re-engagement local notifications, Settings notification toggles —
+  shipped 2026-09-04, verified live on a Pixel 8 emulator
+  ([[project-streak-and-engagement-notifications]]).
+- `onboarding_complete` Superwall placement changed from one-time to a
+  recurring non-subscriber nudge (every cold start + every foreground
+  resume) — 2026-09-04, commit `553f480`
+  ([[project-superwall-billing-setup]]).
 
 **Android toolchain:** pinned to AGP 8.13 / Gradle 8.14.3 / Kotlin 2.2.20
 + Temurin JDK 17 as a workaround for the AGP-9-vs-classic-Kotlin Firebase
@@ -54,7 +66,14 @@ plugin conflict — do NOT let a template regen bump `android/` back to AGP
 
 **Working pattern:** trunk-based on `master`; commit + push only when the
 user explicitly asks (they do so per chunk). Memory lives in a separate
-repo (`vitaly-claude-memory`) — commit/push that on ask too.
+repo (`vitaly-claude-memory`) — commit/push that on ask too. On
+2026-09-04 the user tried a PR-based flow once (feature branch → PR →
+merge → delete branch) instead of pushing straight to master; unclear if
+that's now the standing preference or a one-off — ask if it's ambiguous
+which flow they want next time. `gh pr merge` is blocked by Claude Code's
+auto-mode permission classifier in this environment (confirmed it stays
+blocked even with fast mode off) — don't retry it; tell the user to merge
+via the GitHub web UI instead.
 
 **How to apply:** reorient from this at session start instead of
 re-deriving from git log, but verify against current `git log` since it
