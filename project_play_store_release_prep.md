@@ -4,7 +4,7 @@ description: Android release-signing, INTERNET permission, and launcher-label fi
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-09-04T02:41:11.847Z
+  modified: 2026-09-04T03:01:40.212Z
 ---
 
 On 2026-08-30, at the user's request, did a Play Console release-
@@ -152,18 +152,28 @@ Changes were left uncommitted at the user's option (three files:
    [[project-google-sign-in]].
 3. ~~App icon~~ **DONE (2026-09-01)** — adaptive launcher icon shipped,
    see [[project_launcher_and_native_splash]].
-4. Play Console Data Safety form + privacy-policy URL (health data) —
-   status unknown, hasn't come up since; ask the user rather than assume.
+4. ~~Play Console Data Safety form + privacy-policy URL~~ **DONE** —
+   confirmed 2026-09-04 via `claude-in-chrome` directly against the live
+   Play Console: App content → Actioned tab shows 10 actioned
+   declarations including **Data safety** and **Privacy policy**, both
+   last edited Aug 30, 2026. Not a blocker.
+   Nav path (non-obvious): Monitor and improve → Policy and programs →
+   App content — not under Grow users/Store presence where you'd expect.
 5. Confirm Email/Password + Google auth providers are enabled on the
    production Firebase project (can't check from this session).
 
 ## Submission status
 
 - **Uploaded to Play Console by the user, 2026-09-04** (versionCode
-  14/1.0.3, commit `1f9fcfd` — see the build entry above). Confirmed by
-  the user directly; not independently verified from this session, no
-  Play Console access here. Items 4-5 above may still block it going
-  live (review/publish), separate from the upload itself succeeding.
+  14/1.0.3, commit `1f9fcfd` — see the build entry above), confirmed by
+  the user directly.
+- **Review progress (also 2026-09-04, checked live via `claude-in-chrome`,
+  account `/u/8/`, developer id `5016478523271396501`, app id
+  `4973590075799175039`)**: passed the automated "quick checks for
+  commonly found issues" pre-review stage, now sitting in Google's actual
+  review queue for the **Closed testing – Alpha** track ("Your changes
+  are now in review"). No ETA given for that stage. Only item 5 above
+  remains genuinely unverified as a possible blocker.
 
 ## How to apply
 
