@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: d9366805-0d36-441c-9593-cc8eb49dfc41
-  modified: 2026-09-04T02:06:00.834Z
+  modified: 2026-09-04T02:26:53.349Z
 ---
 
 **Feature Gating gotcha (2026-08-31)** — symptom reported: paywall shows,
@@ -66,6 +66,27 @@ existing dashboard limit together now do the right thing (shows at most
 once/day to a non-subscriber) with no further dashboard change needed.
 Dashboard path: `superwall.com` → Vitaly app → **Campaigns** → "onboarding"
 → "Non-subscribers" audience → **Limit** section.
+
+**Verified live end-to-end (2026-09-04, Pixel 8 emulator)**: cold-started
+the app on an already-onboarded, non-subscribed account (past the old
+one-time-only window) and the real paywall ("trial-focused", GHS pricing,
+Skip button) actually rendered on screen. Confirmed in logcat too — a
+real `paywall_open` event with `presented_by_event_name=onboarding_complete`,
+`feature_gating="NON_GATED"`, timestamp matching the cold start exactly.
+Full loop confirmed: app fires it → Superwall's dashboard rules (audience
++ limit) approve it → a real paywall renders.
+
+**Testing gotcha that nearly produced a false result**: first pass at
+this verification used a plain `flutter run -d <device> --debug` with no
+API key flag — silently fell back to `NoOpPaywallService`, so nothing was
+ever sent to Superwall and the test uid never appeared in Superwall's
+Users list at all (checked via `claude-in-chrome` against the live
+dashboard — that absence was the tell). **Any on-device verification of
+paywall behavior must use
+`flutter run --dart-define-from-file=config/superwall.json`** (see below)
+or it silently tests the no-op stub instead of the real integration —
+looks identical to a passing test until you go looking for the uid on
+the dashboard and it isn't there.
 
 API key loads via `--dart-define-from-file=config/superwall.json` (gitignored; `config/superwall.json.example` is the checked-in template). Always pass that flag when building — omitting it silently falls back to the no-op service (paywall never shows, all premium actions run free), not an error.
 
