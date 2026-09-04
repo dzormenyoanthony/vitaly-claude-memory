@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: d9366805-0d36-441c-9593-cc8eb49dfc41
-  modified: 2026-09-04T02:00:17.826Z
+  modified: 2026-09-04T02:06:00.834Z
 ---
 
 **Feature Gating gotcha (2026-08-31)** — symptom reported: paywall shows,
@@ -55,10 +55,17 @@ the user wanted a recurring nudge instead. Now registers on every
 `AuthGateReady` (every cold start with an existing session) **and** every
 foreground resume while signed in — `OnboardingCompletionDetector` is
 gone (deleted, was unused after the change). No dashboard change was
-needed since the placement string didn't change, but **frequency
-capping** on that campaign (e.g. "at most once per day") is worth setting
-in the dashboard now that the app can register it many times per
-session — that's config-only, no code change.
+needed since the placement string didn't change.
+
+**Confirmed in the dashboard (2026-09-04, via `claude-in-chrome`)**: the
+"onboarding" campaign's "Non-subscribers" audience already had a
+**Limit: up to 1 time every 1 day** set — this was already correctly
+configured *before* the app-side fix, it just didn't matter because the
+old app code only ever sent the registration once, ever. So the fix +
+existing dashboard limit together now do the right thing (shows at most
+once/day to a non-subscriber) with no further dashboard change needed.
+Dashboard path: `superwall.com` → Vitaly app → **Campaigns** → "onboarding"
+→ "Non-subscribers" audience → **Limit** section.
 
 API key loads via `--dart-define-from-file=config/superwall.json` (gitignored; `config/superwall.json.example` is the checked-in template). Always pass that flag when building — omitting it silently falls back to the no-op service (paywall never shows, all premium actions run free), not an error.
 
