@@ -4,7 +4,7 @@ description: Android release-signing, INTERNET permission, and launcher-label fi
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-08-31T06:00:48.539Z
+  modified: 2026-09-04T02:38:13.366Z
 ---
 
 On 2026-08-30, at the user's request, did a Play Console release-
@@ -99,6 +99,29 @@ user's explicit request for a plan-first workflow.
 Changes were left uncommitted at the user's option (three files:
 `android/app/build.gradle.kts`, `android/app/src/main/AndroidManifest.xml`,
 `.gitignore`) — check `git status` before assuming they're pushed.
+
+## Latest release build (2026-09-04, after PDF-gating/streak/notifications + recurring paywall-nudge work)
+
+- Same build command:
+  `flutter build appbundle --release --dart-define-from-file=config/superwall.json`
+  (355s for `bundleRelease` — Gradle daemon warm from same-day emulator
+  builds).
+- Output: `build/app/outputs/bundle/release/app-release.aab`, 93.3MB.
+- **versionCode 14 / versionName 1.0.3** (pubspec `1.0.3+14`). The
+  version bump itself was sitting **uncommitted** in the working tree
+  before this session even started (jumped from the previously-committed
+  `1.0.1+10` — three patch versions with no memory record of what's in
+  them, so treat `1.0.2`/`1.0.3` as somewhat opaque until/unless that's
+  investigated) — committed it separately afterward at the user's
+  request, as commit `1f9fcfd`, pushed.
+- `jarsigner -verify` → `jar verified`, confirmed signed with the upload
+  key (`CN=Vitaly, OU=Development, O=Vitaly`) via the cert CN on every
+  entry — same PKIX/self-signed warnings as before, still expected and
+  harmless.
+- HEAD at build time: `553f480` (before the version-bump commit landed
+  on top as `1f9fcfd`) — `flutter analyze`/`flutter test` were both
+  clean at that commit already (from the same-session work), not re-run
+  specifically for this build since no code changed after.
 
 ## Confirmed OK, deliberately not changed
 

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 247eb89e-4bcc-4af7-b068-92b57033f42c
-  modified: 2026-09-04T02:00:41.639Z
+  modified: 2026-09-04T02:38:41.601Z
 ---
 
 **As of 2026-09-04.** Vitaly is feature-complete against `PROJECT_SPEC.md`
@@ -16,7 +16,9 @@ and everything is committed and pushed to `master`
 uncommitted files (`export_data.md`, `pubspec.yaml`, modified before the
 2026-09-04 session, not touched by it — still sitting uncommitted, not
 yet understood). `master` level with `origin/master`. `pubspec.yaml`
-(committed) version `1.0.2+12`.
+(committed) version `1.0.3+14` (commit `1f9fcfd`) — a release AAB was
+built and verified from this version, see
+[[project-play-store-release-prep]].
 
 **Shipped (see the dedicated memories for detail):**
 - MVP core §4 + BP Report scanning + BP status/range classification
