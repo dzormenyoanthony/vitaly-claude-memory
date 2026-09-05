@@ -1,11 +1,11 @@
 ---
-name: project_launcher_and_native_splash
+name: project-launcher-and-native-splash
 description: App launcher icon made adaptive + Android system splash restyled to match the branded Flutter splash (2026-09-01)
 metadata: 
   node_type: memory
   type: project
   originSessionId: a9a2c75f-ce97-4534-bdef-6188a567dce6
-  modified: 2026-09-01T03:22:51.266Z
+  modified: 2026-09-05T02:34:29.074Z
 ---
 
 Work on 2026-09-01, verified on the Pixel 8 / API 36 emulator and pushed
@@ -61,4 +61,4 @@ Note: the Flutter splash's `_PulsePainter`
 (`lib/features/splash/presentation/splash_screen.dart`) still has a slightly
 different wave (an extra small second peak) than `Splash.png`'s glyph; the
 native `splash_badge.png` uses the reference glyph. See
-[[project_design_references]], [[feedback_reference_image_pixel_fidelity]].
+[[project-design-references]], [[feedback-reference-image-pixel-fidelity]].

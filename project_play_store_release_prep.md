@@ -1,10 +1,10 @@
 ---
 name: project-play-store-release-prep
-description: Android release-signing, INTERNET permission, and launcher-label fixes for Play Console readiness (2026-08-30) — what's done, what's still outstanding
+description: Android release-signing, INTERNET permission, launcher-label fixes, and per-build AAB history for Play Console readiness — all checklist items done as of 2026-09-05, no known blockers
 metadata:
   type: project
   originSessionId: bc2f376b-e0e8-4af1-9c36-1db1ddb1e34f
-  modified: 2026-09-04T03:01:40.212Z
+  modified: 2026-09-05T02:34:55.608Z
 ---
 
 On 2026-08-30, at the user's request, did a Play Console release-
@@ -151,7 +151,7 @@ Changes were left uncommitted at the user's option (three files:
    OAuth clients for all five signing identities. Full detail:
    [[project-google-sign-in]].
 3. ~~App icon~~ **DONE (2026-09-01)** — adaptive launcher icon shipped,
-   see [[project_launcher_and_native_splash]].
+   see [[project-launcher-and-native-splash]].
 4. ~~Play Console Data Safety form + privacy-policy URL~~ **DONE** —
    confirmed 2026-09-04 via `claude-in-chrome` directly against the live
    Play Console: App content → Actioned tab shows 10 actioned
@@ -159,8 +159,11 @@ Changes were left uncommitted at the user's option (three files:
    last edited Aug 30, 2026. Not a blocker.
    Nav path (non-obvious): Monitor and improve → Policy and programs →
    App content — not under Grow users/Store presence where you'd expect.
-5. Confirm Email/Password + Google auth providers are enabled on the
-   production Firebase project (can't check from this session).
+5. ~~Confirm Email/Password + Google auth providers are enabled on the
+   production Firebase project~~ **DONE (2026-09-05)** — checked live via
+   `claude-in-chrome` at
+   `console.firebase.google.com/project/vitality-23966/authentication/providers`:
+   both Email/Password and Google show "Enabled". No blockers remain.
 
 ## Submission status
 
@@ -172,8 +175,26 @@ Changes were left uncommitted at the user's option (three files:
   `4973590075799175039`)**: passed the automated "quick checks for
   commonly found issues" pre-review stage, now sitting in Google's actual
   review queue for the **Closed testing – Alpha** track ("Your changes
-  are now in review"). No ETA given for that stage. Only item 5 above
-  remains genuinely unverified as a possible blocker.
+  are now in review"). No ETA given for that stage.
+
+## Latest release build (2026-09-05, after the Terms/Privacy Policy link work)
+
+- Same build command:
+  `flutter build appbundle --release --dart-define-from-file=config/superwall.json`
+  (454.6s for `bundleRelease` — slower than the 2026-09-04 build since an
+  emulator was running concurrently for manual testing).
+- Output: `build/app/outputs/bundle/release/app-release.aab`, 93.3MB.
+- **versionCode 15 / versionName 1.0.4** (pubspec `1.0.4+15`, commits
+  `2bc573e` + `fea1e0a`). The `1.0.3+14` → `1.0.4+15` jump happened via
+  concurrent edits outside this session (observed mid-session, not
+  investigated) — same "somewhat opaque" situation as the earlier
+  `1.0.2`/`1.0.3` jump.
+- `jarsigner -verify` → `jar verified`, same upload key, same expected
+  PKIX/self-signed warnings.
+- `flutter analyze` clean, full suite 345/345 passing (was 344 before
+  this session's new Settings legal-link test).
+- User is uploading this AAB to Play Console themselves (2026-09-05) —
+  not done from this session.
 
 ## How to apply
 

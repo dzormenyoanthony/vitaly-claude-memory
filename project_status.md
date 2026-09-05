@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 247eb89e-4bcc-4af7-b068-92b57033f42c
-  modified: 2026-09-04T02:38:41.601Z
+  modified: 2026-09-05T02:35:01.916Z
 ---
 
 **As of 2026-09-04.** Vitaly is feature-complete against `PROJECT_SPEC.md`
@@ -39,7 +39,7 @@ built and verified from this version, see
   ([[project-play-store-release-prep]]); Superwall + Play Console billing
   ([[project-superwall-billing-setup]]).
 - Adaptive launcher icon + Android-12 system-splash restyle
-  ([[project_launcher_and_native_splash]]).
+  ([[project-launcher-and-native-splash]]).
 - Spec-gap audit done 2026-08-29 — §36/§26/§37 fixed; a few minor items
   by-design ([[project-spec-gap-audit]]).
 - Trends PDF export premium-gated (was bypassing the paywall), streak
